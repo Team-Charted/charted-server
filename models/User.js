@@ -26,7 +26,23 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    billboardHot100: [
+        {
+            title: {
+                type: String,
+            },
+            artist: {
+                type: String,
+            },
+            leadSingle: {
+                type: Boolean,
+            }
+            // credits:{
+            //     type: Number,
+            // }
+        }
+    ]
 });
 
 module.exports = User = mongoose.model('user', UserSchema);
