@@ -1,0 +1,31 @@
+{
+  "name": "charted-server",
+  "version": "1.0.0",
+  "description": "Backend node server for charted",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server",
+    "dev": "nodemon server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Team-Charted/charted-server.git"
+  },
+  "author": "Mizan Ali",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Team-Charted/charted-server/issues"
+  },
+  "homepage": "https://github.com/Team-Charted/charted-server#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "config": "^3.3.6",
+    "express": "^4.17.1",
+    "express-validator": "^6.12.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.13.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  }
+}
