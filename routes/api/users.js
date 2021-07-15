@@ -36,6 +36,12 @@ router.post('/',
                 res.status(400).json({ errors: [ { message: 'User already exists'} ]});
             }
 
+            //check if username is taken
+            let userByUsername = await User.findOne({ username: username });
+            if(userByUsername) {
+                res.status(400).json({ errors: [ { message: 'Username is taken'} ]});
+            }
+
             //create new User object
             user = new User({
                 name: name,
