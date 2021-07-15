@@ -10,12 +10,6 @@ const User = require('../../models/User');
 // @desc    Get current user's album for Billboard Hot 100
 // @access  Private
 router.get('/billboard-hot-100', auth, async (req, res) => {
-    //validation error handling
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
         const user = await User.findById(req.user.id);
         if (user.billboardHot100.length === 0) {

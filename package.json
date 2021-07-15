@@ -18,7 +18,9 @@
   },
   "homepage": "https://github.com/Team-Charted/charted-server#readme",
   "dependencies": {
+    "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
+    "billboard-top-100": "^2.5.9",
     "config": "^3.3.6",
     "express": "^4.17.1",
     "express-validator": "^6.12.0",
