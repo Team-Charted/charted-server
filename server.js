@@ -6,7 +6,12 @@ const app = express();
 //connect MongoDB Atlas database
 connectDB();
 
-app.get('/', (req, res) => res.send('Hello World'));
+//init middleware
+app.use(express.json({ extended: false }));
+
+//define routes
+app.use('/api/users', require('./routes/api/users'));
+app.use('/api/auth', require('./routes/api/auth'));
 
 const PORT = process.env.PORT || 5000;
 
