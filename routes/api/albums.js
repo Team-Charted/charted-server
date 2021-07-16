@@ -13,7 +13,7 @@ router.get('/billboard-hot-100', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (user.billboardHot100.length === 0) {
-            res.status(400).json({ errors: [{ message: 'Album does not exist' }] });
+            return res.status(400).json({ errors: [{ message: 'Album does not exist' }] });
         }
         res.json(user.billboardHot100);
     } catch (err) {

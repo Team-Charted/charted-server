@@ -33,13 +33,13 @@ router.post('/',
             //check if user already exists
             let user = await User.findOne({ email: email });
             if(user) {
-                res.status(400).json({ errors: [ { message: 'User already exists'} ]});
+                return res.status(400).json({ errors: [ { message: 'User already exists'} ]});
             }
 
             //check if username is taken
             let userByUsername = await User.findOne({ username: username });
             if(userByUsername) {
-                res.status(400).json({ errors: [ { message: 'Username is taken'} ]});
+                return res.status(400).json({ errors: [ { message: 'Username is taken'} ]});
             }
 
             //create new User object
