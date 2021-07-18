@@ -1,5 +1,6 @@
 const express = require('express');
 const connectDB = require('./config/db');
+const fileUpload = require('express-fileupload');
 
 const app = express();
 
@@ -8,6 +9,7 @@ connectDB();
 
 //init middleware
 app.use(express.json({ extended: false }));
+app.use(fileUpload());
 
 //define routes
 app.use('/api/admin', require('./routes/api/admin'));

@@ -42,6 +42,22 @@ const UserSchema = new mongoose.Schema({
             //     type: Number,
             // }
         }
+    ],
+    spotifyTop200Global: [
+        {
+            title: {
+                type: String,
+            },
+            artist: {
+                type: String,
+            },
+            leadSingle: {
+                type: Boolean,
+            }
+            // credits:{
+            //     type: Number,
+            // }
+        }
     ]
 });
 
