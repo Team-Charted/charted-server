@@ -58,18 +58,35 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                             const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
                             //find this song's index in Billboard Hot 100 by comparing unique strings
                             const index = chartSongs.findIndex(song => song === formattedSong);
-                            if (index !== -1) {
-                                //add points for each song
-                                let pointsForCurrentSong = (100 - index);
 
+                            let pointsForCurrentSong = 0.0;
+
+                            if (index !== -1) {
+
+                                let theSong = chart.songs[index];
+
+                                //calculate points
+                                let currentPosition = theSong.rank;
+                                let lastWeekPosition = parseInt(theSong.position.positionLastWeek);
+                                let peakPosition = parseInt(theSong.position.peakPosition);
+                                let weeksOnChart = parseInt(theSong.position.weeksOnChart);
+
+                                pointsForCurrentSong = (2 * lastWeekPosition + peakPosition) / (weeksOnChart + 3 * currentPosition);
+
+                                //double the points if it was the lead single
+                                if (song.leadSingle) {
+                                    pointsForCurrentSong *= 2;
+                                }
+
+                                //add these points to the total points
                                 totalPoints = totalPoints + pointsForCurrentSong;
-                                songsWithPoints.push({
-                                    points: pointsForCurrentSong,
-                                    title: song.title,
-                                    artist: song.artist,
-                                    leadSingle: song.leadSingle
-                                });
                             }
+                            songsWithPoints.push({
+                                points: pointsForCurrentSong,
+                                title: song.title,
+                                artist: song.artist,
+                                leadSingle: song.leadSingle
+                            });
                         })
 
                         //delete album array for Billboard Hot 100 from user object
@@ -90,13 +107,13 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                         //save result to database
                         await newResult.save();
 
-                        //update nextDate on chartObject
-                        let date = chartObject.nextDate;
-                        let dateInt = parseInt(date.toString().slice(-2));
-                        let nextDateInt = dateInt + 7;
-                        let newDate = date.toString().slice(0, -2) + nextDateInt.toString();
-                        chartObject.nextDate = newDate;
-                        await chartObject.save();
+                        //TODO: update nextDate on chartObject
+                        // let date = chartObject.nextDate;
+                        // let dateInt = parseInt(date.toString().slice(-2));
+                        // let nextDateInt = dateInt + 7;
+                        // let newDate = date.toString().slice(0, -2) + nextDateInt.toString();
+                        // chartObject.nextDate = newDate;
+                        // await chartObject.save();
 
                         res.json("Successfully updated leaderboard");
                     });
@@ -127,27 +144,51 @@ router.post('/spotify-top-200-global/result/calculate',
             //check if request was sent by an admin
             const user = await User.findById(req.user.id);
             if (config.get('adminEmails').includes(user.email)) {
-                if (!req.files) return res.status(403).json({ errors: [{ message: 'Need a .csv chart file' }] });
+                if (!req.files) return res.status(403).json({ errors: [{ message: 'Need .csv chart files' }] });
 
-                //get the Spotify charts CSV file from the request
-                const myCSV = req.files.chart;
+                //get the current Spotify charts CSV file from the request
+                const currentChartCSV = req.files.currentChart;
+                //get the previous Spotify charts CSV file from the request
+                const previousChartCSV = req.files.previousChart;
                 //get the Spotify chart's date from the request body
                 const { date } = req.body;
 
-                let chart = {
+                let currentChart = {
                     count: 0,
                     list: [],
-
                 };
 
-                csv.parseString(myCSV.data, {
+                csv.parseString(currentChartCSV.data, {
                     skipRows: 2,
                 })
                     .on("error", (error) => console.log(error))
-                    .on("data", (row) => chart.list.push(row))
+                    .on("data", (row) => currentChart.list.push(row))
                     .on("end", (rowCount) => {
-                        chart.count = rowCount;
-                        chart.list = chart.list.map((i) => {
+                        currentChart.count = rowCount;
+                        currentChart.list = currentChart.list.map((i) => {
+                            return {
+                                place: parseInt(i[0]),
+                                title: i[1],
+                                artist: i[2],
+                                streams: parseInt(i[3]),
+                                url: i[4],
+                            };
+                        });
+                    });
+
+                let previousChart = {
+                    count: 0,
+                    list: [],
+                };
+
+                csv.parseString(previousChartCSV.data, {
+                    skipRows: 2,
+                })
+                    .on("error", (error) => console.log(error))
+                    .on("data", (row) => previousChart.list.push(row))
+                    .on("end", (rowCount) => {
+                        previousChart.count = rowCount;
+                        previousChart.list = previousChart.list.map((i) => {
                             return {
                                 place: parseInt(i[0]),
                                 title: i[1],
@@ -173,12 +214,16 @@ router.post('/spotify-top-200-global/result/calculate',
                 });
 
                 //format chart songs into unique strings
-                let chartSongs = [];
-                chartSongs = chart.list.map(song => {
+                let currentChartSongs = [];
+                currentChartSongs = currentChart.list.map(song => {
+                    return (song.artist.split(" ")[0] + '-' + song.title.split("(")[0]).trim().toLowerCase().replace(/[^a-z]/g, "") // <ARTISTNAME>-<SONGNAME>
+                });
+                let previousChartSongs = [];
+                previousChartSongs = previousChart.list.map(song => {
                     return (song.artist.split(" ")[0] + '-' + song.title.split("(")[0]).trim().toLowerCase().replace(/[^a-z]/g, "") // <ARTISTNAME>-<SONGNAME>
                 });
 
-                //iterate through all users having an album for Billboard Hot 100
+                //iterate through all users having an album for Spotify Top 200 Global
                 User.
                     find({ "spotifyTop200Global.0": { "$exists": true } }).
                     cursor().
@@ -191,23 +236,40 @@ router.post('/spotify-top-200-global/result/calculate',
                         user.spotifyTop200Global.map(song => {
                             //format each song into unique string
                             const formattedSong = (song.artist.split(" ")[0] + '-' + song.title.split("(")[0]).trim().toLowerCase().replace(/[^a-z]/g, "");
-                            //find this song's index in Billboard Hot 100 by comparing unique strings
-                            const index = chartSongs.findIndex(song => song === formattedSong);
-                            if (index !== -1) {
-                                //add points for each song
-                                let pointsForCurrentSong = (200 - index);
+                            //find this song's index in Spotify Top 200 Global by comparing unique strings
+                            const currentIndex = currentChartSongs.findIndex(song => song === formattedSong);
 
+                            let pointsForCurrentSong = 0.0;
+
+                            if (currentIndex !== -1) {
+                                const previousIndex = previousChartSongs.findIndex(song => song === formattedSong);
+                                //if song charted previously
+                                if (previousIndex !== -1) {
+                                    //calculate points
+                                    let previousPosition = previousChart.list[previousIndex].place;
+                                    let previousStreams = previousChart.list[previousIndex].streams;
+                                    let currentPosition = currentChart.list[currentIndex].place;
+                                    let currentStreams = currentChart.list[currentIndex].streams;
+
+                                    pointsForCurrentSong = (previousPosition + currentStreams) / (previousStreams + currentPosition);
+                                } else {
+                                    let currentPosition = currentChart.list[currentIndex].place;
+                                    let currentStreams = currentChart.list[currentIndex].streams;
+
+                                    pointsForCurrentSong = 2 * (currentStreams) / (currentPosition);
+                                }
                                 totalPoints = totalPoints + pointsForCurrentSong;
-                                songsWithPoints.push({
-                                    points: pointsForCurrentSong,
-                                    title: song.title,
-                                    artist: song.artist,
-                                    leadSingle: song.leadSingle
-                                });
                             }
+
+                            songsWithPoints.push({
+                                points: pointsForCurrentSong,
+                                title: song.title,
+                                artist: song.artist,
+                                leadSingle: song.leadSingle
+                            });
                         })
 
-                        //delete album array for Billboard Hot 100 from user object
+                        //delete album array for Spotify Top 200 Global from user object
                         user.spotifyTop200Global = undefined;
 
                         //update leaderboard field on newResult object
@@ -225,13 +287,13 @@ router.post('/spotify-top-200-global/result/calculate',
                         //save result to database
                         await newResult.save();
 
-                        //update nextDate on chartObject
-                        let date = chartObject.nextDate;
-                        let dateInt = parseInt(date.toString().slice(3, 5));
-                        let nextDateInt = dateInt + 1;
-                        let newDate = date.toString().slice(0, 3) + nextDateInt.toString() + date.toString().slice(5);
-                        chartObject.nextDate = newDate;
-                        await chartObject.save();
+                        //TODO: update nextDate on chartObject
+                        // let date = chartObject.nextDate;
+                        // let dateInt = parseInt(date.toString().slice(3, 5));
+                        // let nextDateInt = dateInt + 1;
+                        // let newDate = date.toString().slice(0, 3) + nextDateInt.toString() + date.toString().slice(5);
+                        // chartObject.nextDate = newDate;
+                        // await chartObject.save();
 
                         res.json("Successfully updated leaderboard");
                     });
