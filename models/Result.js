@@ -20,7 +20,26 @@ const ResultSchema = new mongoose.Schema({
             },
             points: {
                 type: Number
-            }
+            },
+            songsWithPoints: [
+                {
+                    points: {
+                        type: Number
+                    },
+                    title: {
+                        type: String,
+                    },
+                    artist: {
+                        type: String,
+                    },
+                    leadSingle: {
+                        type: Boolean,
+                    }
+                    // credits:{
+                    //     type: Number,
+                    // }
+                }
+            ]
         }
     ]
 });

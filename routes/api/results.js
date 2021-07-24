@@ -49,7 +49,8 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                     cursor().
                     on('data', async function (user) {
 
-                        let points = 0.0;
+                        let totalPoints = 0.0;
+                        let songsWithPoints = [];
 
                         //iterate through user's album array
                         user.billboardHot100.map(song => {
@@ -59,8 +60,15 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                             const index = chartSongs.findIndex(song => song === formattedSong);
                             if (index !== -1) {
                                 //add points for each song
-                                //TODO: IMPLEMENT POINT SYSTEM
-                                points = points + (100 - index);
+                                let pointsForCurrentSong = (100 - index);
+
+                                totalPoints = totalPoints + pointsForCurrentSong;
+                                songsWithPoints.push({
+                                    points: pointsForCurrentSong,
+                                    title: song.title,
+                                    artist: song.artist,
+                                    leadSingle: song.leadSingle
+                                });
                             }
                         })
 
@@ -71,7 +79,8 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                         newResult.leaderboard.push({
                             user: user._id,
                             username: user.username,
-                            points: points
+                            points: totalPoints,
+                            songsWithPoints: songsWithPoints
                         });
 
                         //save user to database
@@ -175,7 +184,8 @@ router.post('/spotify-top-200-global/result/calculate',
                     cursor().
                     on('data', async function (user) {
 
-                        let points = 0.0;
+                        let totalPoints = 0.0;
+                        let songsWithPoints = [];
 
                         //iterate through user's album array
                         user.spotifyTop200Global.map(song => {
@@ -185,8 +195,15 @@ router.post('/spotify-top-200-global/result/calculate',
                             const index = chartSongs.findIndex(song => song === formattedSong);
                             if (index !== -1) {
                                 //add points for each song
-                                //TODO: IMPLEMENT POINT SYSTEM
-                                points = points + (200 - index);
+                                let pointsForCurrentSong = (200 - index);
+
+                                totalPoints = totalPoints + pointsForCurrentSong;
+                                songsWithPoints.push({
+                                    points: pointsForCurrentSong,
+                                    title: song.title,
+                                    artist: song.artist,
+                                    leadSingle: song.leadSingle
+                                });
                             }
                         })
 
@@ -197,7 +214,8 @@ router.post('/spotify-top-200-global/result/calculate',
                         newResult.leaderboard.push({
                             user: user._id,
                             username: user.username,
-                            points: points
+                            points: totalPoints,
+                            songsWithPoints: songsWithPoints
                         });
 
                         //save user to database
