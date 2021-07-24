@@ -8,8 +8,9 @@ const router = express.Router();
 
 const auth = require('../../middleware/auth');
 const Result = require('../../models/Result');
+const Chart = require('../../models/Chart');
 
-// @route   POST api/admin/billboard-hot-100/result/calculate
+// @route   POST api/results/billboard-hot-100/result/calculate
 // @desc    Calculate results for Billboard Hot 100 chart
 // @access  Admin
 router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
@@ -18,18 +19,20 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
         const user = await User.findById(req.user.id);
         if (config.get('adminEmails').includes(user.email)) {
 
+            //get the Chart object
+            let chartObject = await Chart.findOne({ name: "Billboard Hot 100" });
+
             //get latest Billboard Hot 100 chart
             getChart('hot-100', async (err, chart) => {
                 if (err) reject(err);
 
                 //check if result has already been calculated
-                const result = await Result.findOne({ date: chart.week, chart: "Billboard Hot 100" });
+                const result = await Result.findOne({ date: chart.week, chart: chartObject.id });
                 if (result)
                     return res.status(400).json({ errors: [{ message: 'Leaderboard already updated' }] });
 
                 const newResult = new Result({
-                    chart: "Billboard Hot 100",
-                    type: "Weekly",
+                    chart: chartObject.id,
                     date: chart.week,
                     leaderboard: []
                 });
@@ -77,6 +80,15 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                     on('end', async () => {
                         //save result to database
                         await newResult.save();
+
+                        //update nextDate on chartObject
+                        let date = chartObject.nextDate;
+                        let dateInt = parseInt(date.toString().slice(-2));
+                        let nextDateInt = dateInt + 7;
+                        let newDate = date.toString().slice(0, -2) + nextDateInt.toString();
+                        chartObject.nextDate = newDate;
+                        await chartObject.save();
+
                         res.json("Successfully updated leaderboard");
                     });
             });
@@ -89,7 +101,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
     }
 });
 
-// @route   POST api/admin/spotify-top-200-global/result/calculate
+// @route   POST api/results/spotify-top-200-global/result/calculate
 // @desc    Calculate results for Spotify Top 200 Global chart
 // @access  Admin
 router.post('/spotify-top-200-global/result/calculate',
@@ -137,14 +149,16 @@ router.post('/spotify-top-200-global/result/calculate',
                         });
                     });
 
+                //get the Chart object
+                let chartObject = await Chart.findOne({ name: "Spotify Top 200: Global" });
+
                 //check if result has already been calculated
-                const result = await Result.findOne({ date: date, chart: "Spotify Top 200 Global" });
+                const result = await Result.findOne({ date: date, chart: chartObject.id });
                 if (result)
                     return res.status(400).json({ errors: [{ message: 'Leaderboard already updated' }] });
 
                 const newResult = new Result({
-                    chart: "Spotify Top 200 Global",
-                    type: "Daily",
+                    chart: chartObject.id,
                     date: date,
                     leaderboard: []
                 });
@@ -192,6 +206,15 @@ router.post('/spotify-top-200-global/result/calculate',
                     on('end', async () => {
                         //save result to database
                         await newResult.save();
+
+                        //update nextDate on chartObject
+                        let date = chartObject.nextDate;
+                        let dateInt = parseInt(date.toString().slice(3, 5));
+                        let nextDateInt = dateInt + 1;
+                        let newDate = date.toString().slice(0, 3) + nextDateInt.toString() + date.toString().slice(5);
+                        chartObject.nextDate = newDate;
+                        await chartObject.save();
+
                         res.json("Successfully updated leaderboard");
                     });
             } else {

@@ -2,12 +2,8 @@ const mongoose = require('mongoose');
 
 const ResultSchema = new mongoose.Schema({
     chart: {
-        type: String,
-        required: true
-    },
-    type: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "chart"
     },
     date: {
         type: String,
