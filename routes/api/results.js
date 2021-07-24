@@ -251,7 +251,7 @@ router.post('/spotify-top-200-global/result/calculate',
                                     let currentPosition = currentChart.list[currentIndex].place;
                                     let currentStreams = currentChart.list[currentIndex].streams;
 
-                                    pointsForCurrentSong = (previousPosition + currentStreams) / (previousStreams + currentPosition);
+                                    pointsForCurrentSong = (previousPosition + 2 * currentStreams) / (previousStreams + 2 * currentPosition);
                                 } else {
                                     let currentPosition = currentChart.list[currentIndex].place;
                                     let currentStreams = currentChart.list[currentIndex].streams;
