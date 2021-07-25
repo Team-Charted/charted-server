@@ -40,7 +40,11 @@ router.post('/billboard-hot-100',
 
         try {
             let user = await User.findById(req.user.id);
+            if (user.coins < 50) {
+                return res.status(400).json({ errors: [{ message: 'Not enough coins' }] });
+            }
             user.billboardHot100 = songs;
+            user.coins -= 50;
             await user.save();
             res.json(user.billboardHot100);
         } catch (err) {
@@ -83,7 +87,11 @@ router.post('/spotify-top-200-global',
 
         try {
             let user = await User.findById(req.user.id);
+            if (user.coins < 25) {
+                return res.status(400).json({ errors: [{ message: 'Not enough coins' }] });
+            }
             user.spotifyTop200Global = songs;
+            user.coins -= 25;
             await user.save();
             res.json(user.spotifyTop200Global);
         } catch (err) {
