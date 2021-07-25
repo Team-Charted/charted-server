@@ -15,6 +15,10 @@ const UserSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    phoneNumber: {
+        type: String,
+        required: true
+    },
     password: {
         type: String,
         required: true
@@ -26,6 +30,13 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    contactID: {
+        type: String,
+        required: true
+    },
+    fundAccountID: {
+        type: String
     },
     billboardHot100: [
         {
