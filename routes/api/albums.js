@@ -27,8 +27,8 @@ router.get('/billboard-hot-100', auth, async (req, res) => {
 // @access  Private
 router.post('/billboard-hot-100',
     auth,
-    //songs array must be 11 elements long
-    body('songs').isArray({ min: 11, max: 11 }).withMessage('11 songs required'),
+    //songs array must be 9 elements long
+    body('songs').isArray({ min: 9, max: 9 }).withMessage('9 songs required'),
     async (req, res) => {
         //validation error handling
         const errors = validationResult(req);
@@ -74,8 +74,8 @@ router.get('/spotify-top-200-global', auth, async (req, res) => {
 // @access  Private
 router.post('/spotify-top-200-global',
     auth,
-    //songs array must be 11 elements long
-    body('songs').isArray({ min: 11, max: 11 }).withMessage('11 songs required'),
+    //songs array must be 9 elements long
+    body('songs').isArray({ min: 9, max: 9 }).withMessage('9 songs required'),
     async (req, res) => {
         //validation error handling
         const errors = validationResult(req);
