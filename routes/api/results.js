@@ -29,7 +29,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                 //check if result has already been calculated
                 const result = await Result.findOne({ date: chart.week, chart: chartObject.id });
                 if (result)
-                    return res.status(400).json({ errors: [{ message: 'Leaderboard already updated' }] });
+                    return res.status(400).json({ errors: [{ msg: 'Leaderboard already updated' }] });
 
                 const newResult = new Result({
                     chart: chartObject.id,
@@ -119,7 +119,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                     });
             });
         } else {
-            return res.status(403).json({ errors: [{ message: 'Forbidden' }] });
+            return res.status(403).json({ errors: [{ msg: 'Forbidden' }] });
         }
     } catch (err) {
         console.log(err.message);
@@ -144,7 +144,7 @@ router.post('/spotify-top-200-global/result/calculate',
             //check if request was sent by an admin
             const user = await User.findById(req.user.id);
             if (config.get('adminEmails').includes(user.email)) {
-                if (!req.files) return res.status(403).json({ errors: [{ message: 'Need .csv chart files' }] });
+                if (!req.files) return res.status(403).json({ errors: [{ msg: 'Need .csv chart files' }] });
 
                 //get the current Spotify charts CSV file from the request
                 const currentChartCSV = req.files.currentChart;
@@ -205,7 +205,7 @@ router.post('/spotify-top-200-global/result/calculate',
                 //check if result has already been calculated
                 const result = await Result.findOne({ date: date, chart: chartObject.id });
                 if (result)
-                    return res.status(400).json({ errors: [{ message: 'Leaderboard already updated' }] });
+                    return res.status(400).json({ errors: [{ msg: 'Leaderboard already updated' }] });
 
                 const newResult = new Result({
                     chart: chartObject.id,
@@ -298,7 +298,7 @@ router.post('/spotify-top-200-global/result/calculate',
                         res.json("Successfully updated leaderboard");
                     });
             } else {
-                return res.status(403).json({ errors: [{ message: 'Forbidden' }] });
+                return res.status(403).json({ errors: [{ msg: 'Forbidden' }] });
             }
         } catch (err) {
             console.log(err.message);

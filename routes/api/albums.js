@@ -13,7 +13,7 @@ router.get('/billboard-hot-100', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (user.billboardHot100.length === 0) {
-            return res.status(400).json({ errors: [{ message: 'Album does not exist' }] });
+            return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
         }
         res.json(user.billboardHot100);
     } catch (err) {
@@ -41,7 +41,7 @@ router.post('/billboard-hot-100',
         try {
             let user = await User.findById(req.user.id);
             if (user.coins < 50) {
-                return res.status(400).json({ errors: [{ message: 'Not enough coins' }] });
+                return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
             }
             user.billboardHot100 = songs;
             user.coins -= 50;
@@ -60,7 +60,7 @@ router.get('/spotify-top-200-global', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (user.spotifyTop200Global.length === 0) {
-            return res.status(400).json({ errors: [{ message: 'Album does not exist' }] });
+            return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
         }
         res.json(user.spotifyTop200Global);
     } catch (err) {
@@ -88,7 +88,7 @@ router.post('/spotify-top-200-global',
         try {
             let user = await User.findById(req.user.id);
             if (user.coins < 25) {
-                return res.status(400).json({ errors: [{ message: 'Not enough coins' }] });
+                return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
             }
             user.spotifyTop200Global = songs;
             user.coins -= 25;

@@ -31,6 +31,10 @@ router.post('/link-bank-account',
         try {
             const user = await User.findById(req.user.id);
 
+            if(user.fundAccountID) {
+                return res.status(400).json({ errors: [{ msg: 'Account already linked' }] });
+            }
+
             const body = {
                 contact_id: user.contactID,
                 account_type: "bank_account",
@@ -85,7 +89,7 @@ router.post('/withdraw',
             const user = await User.findById(req.user.id);
 
             if (!user.fundAccountID) {
-                return res.status(400).json({ errors: [{ message: 'No bank account linked' }] });
+                return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
             }
 
             const body = {
@@ -115,7 +119,65 @@ router.post('/withdraw',
             user.coins -= amount;
             await user.save();
 
-            res.json("Successfully linked user bank account");
+            res.json("Successfully withdrawn amount");
+        } catch (err) {
+            console.log(err.message);
+            res.status(500).send('Server error');
+        }
+    });
+
+
+// @route   POST api/transactions/add
+// @desc    Add money to charted wallet
+// @access  Private
+router.post('/add',
+    auth,
+    //amount must be present
+    body('amount').notEmpty().withMessage('Amount is required'),
+    async (req, res) => {
+        //validation error handling
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { amount } = req.body;
+
+        try {
+            const user = await User.findById(req.user.id);
+
+            if (!user.fundAccountID) {
+                return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
+            }
+
+            // const body = {
+            //     account_number: config.get('accountNumber'),
+            //     fund_account_id: user.fundAccountID,
+            //     amount: amount,
+            //     currency: "INR",
+            //     mode: "NEFT",
+            //     purpose: "payout"
+            // };
+
+            // const reqConfig = {
+            //     headers: {
+            //         'Content-Type': 'application/json'
+            //     },
+            //     auth: {
+            //         username: config.get('razorpayKeyID'),
+            //         password: config.get('razorpayKeySecret')
+            //     }
+            // }
+
+            // //send request to Razorpay
+            // const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
+
+            //TODO: save transaction to user in databse
+            //update user's coins
+            user.coins += amount;
+            await user.save();
+
+            res.json("Successfully added coins");
         } catch (err) {
             console.log(err.message);
             res.status(500).send('Server error');

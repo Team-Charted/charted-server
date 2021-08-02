@@ -43,7 +43,7 @@ router.post('/',
             //check if user already exists
             let user = await User.findOne({ email: email });
             if (!user) {
-                return res.status(400).json({ errors: [{ message: 'User does not exist' }] });
+                return res.status(400).json({ errors: [{ msg: 'User does not exist' }] });
             }
 
             //match password

@@ -57,7 +57,7 @@ router.post('/',
                 //check if user already exists
                 let chart = await Chart.findOne({ name: name });
                 if (chart) {
-                    return res.status(400).json({ errors: [{ message: 'Chart already exists' }] });
+                    return res.status(400).json({ errors: [{ msg: 'Chart already exists' }] });
                 }
 
                 //create new Chart object
@@ -71,7 +71,7 @@ router.post('/',
 
                 res.json(chart);
             } else {
-                return res.status(403).json({ errors: [{ message: 'Forbidden' }] });
+                return res.status(403).json({ errors: [{ msg: 'Forbidden' }] });
             }
         } catch (err) {
             console.log(err.message);
