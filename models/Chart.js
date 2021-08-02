@@ -5,6 +5,9 @@ const ChartSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    cost: {
+        type: Number
+    },
     type: {
         type: String,
         required: true

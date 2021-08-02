@@ -92,34 +92,39 @@ router.post('/withdraw',
                 return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
             }
 
-            const body = {
-                account_number: config.get('accountNumber'),
-                fund_account_id: user.fundAccountID,
-                amount: amount,
-                currency: "INR",
-                mode: "NEFT",
-                purpose: "payout"
-            };
+            // const body = {
+            //     account_number: config.get('accountNumber'),
+            //     fund_account_id: user.fundAccountID,
+            //     amount: amount,
+            //     currency: "INR",
+            //     mode: "NEFT",
+            //     purpose: "payout"
+            // };
 
-            const reqConfig = {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                auth: {
-                    username: config.get('razorpayKeyID'),
-                    password: config.get('razorpayKeySecret')
-                }
-            }
+            // const reqConfig = {
+            //     headers: {
+            //         'Content-Type': 'application/json'
+            //     },
+            //     auth: {
+            //         username: config.get('razorpayKeyID'),
+            //         password: config.get('razorpayKeySecret')
+            //     }
+            // }
 
             //send request to Razorpay
-            const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
+            // const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
 
             //TODO: save transaction to user in databse
             //update user's coins
             user.coins -= amount;
             await user.save();
 
-            res.json("Successfully withdrawn amount");
+            const data = {
+                amountWithdrawn: amount,
+                balance: user.coins
+            }
+
+            res.json(data);
         } catch (err) {
             console.log(err.message);
             res.status(500).send('Server error');
@@ -177,7 +182,12 @@ router.post('/add',
             user.coins += amount;
             await user.save();
 
-            res.json("Successfully added coins");
+            const data = {
+                amountAdded: amount,
+                balance: user.coins
+            }
+
+            res.json(data);
         } catch (err) {
             console.log(err.message);
             res.status(500).send('Server error');
