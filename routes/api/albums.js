@@ -4,6 +4,8 @@ const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
 const auth = require('../../middleware/auth');
+const Album = require('../../models/Album');
+const Chart = require('../../models/Chart');
 const User = require('../../models/User');
 
 // @route   GET api/albums/billboard-hot-100
@@ -11,11 +13,12 @@ const User = require('../../models/User');
 // @access  Private
 router.get('/billboard-hot-100', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
-        if (user.billboardHot100.length === 0) {
+        const chart = await Chart.findOne({name: 'Billboard Hot 100'});
+        const album = await Album.findOne({user: req.user.id, chart: chart.id});
+        if (!album) {
             return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
         }
-        res.json(user.billboardHot100);
+        res.json(album);
     } catch (err) {
         console.log(err.message);
         res.status(500).send('Server error');
@@ -40,13 +43,22 @@ router.post('/billboard-hot-100',
 
         try {
             let user = await User.findById(req.user.id);
+            const chart = await Chart.findOne({name: 'Billboard Hot 100'});
             if (user.coins < 50) {
                 return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
             }
-            user.billboardHot100 = songs;
             user.coins -= 50;
             await user.save();
-            res.json(user.billboardHot100);
+
+            const album = new Album({
+                chart: chart.id,
+                user: user.id,
+                songs: songs
+            });
+
+            album.save();
+
+            res.json(album);
         } catch (err) {
             console.log(err.message);
             res.status(500).send('Server error');
@@ -58,11 +70,12 @@ router.post('/billboard-hot-100',
 // @access  Private
 router.get('/spotify-top-200-global', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
-        if (user.spotifyTop200Global.length === 0) {
+        const chart = await Chart.findOne({name: 'Spotify Top 200: Global'});
+        const album = await Album.findOne({user: req.user.id, chart: chart.id});
+        if (!album) {
             return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
         }
-        res.json(user.spotifyTop200Global);
+        res.json(album);
     } catch (err) {
         console.log(err.message);
         res.status(500).send('Server error');
@@ -87,13 +100,22 @@ router.post('/spotify-top-200-global',
 
         try {
             let user = await User.findById(req.user.id);
-            if (user.coins < 25) {
+            const chart = await Chart.findOne({name: 'Spotify Top 200: Global'});
+            if (user.coins < 50) {
                 return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
             }
-            user.spotifyTop200Global = songs;
-            user.coins -= 25;
+            user.coins -= 50;
             await user.save();
-            res.json(user.spotifyTop200Global);
+
+            const album = new Album({
+                chart: chart.id,
+                user: user.id,
+                songs: songs
+            });
+
+            album.save();
+
+            res.json(album);
         } catch (err) {
             console.log(err.message);
             res.status(500).send('Server error');

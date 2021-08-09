@@ -37,39 +37,7 @@ const UserSchema = new mongoose.Schema({
     },
     fundAccountID: {
         type: String
-    },
-    billboardHot100: [
-        {
-            title: {
-                type: String,
-            },
-            artist: {
-                type: String,
-            },
-            leadSingle: {
-                type: Boolean,
-            }
-            // credits:{
-            //     type: Number,
-            // }
-        }
-    ],
-    spotifyTop200Global: [
-        {
-            title: {
-                type: String,
-            },
-            artist: {
-                type: String,
-            },
-            leadSingle: {
-                type: Boolean,
-            }
-            // credits:{
-            //     type: Number,
-            // }
-        }
-    ]
+    }
 });
 
 module.exports = User = mongoose.model('user', UserSchema);

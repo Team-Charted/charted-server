@@ -9,6 +9,7 @@ const router = express.Router();
 const auth = require('../../middleware/auth');
 const Result = require('../../models/Result');
 const Chart = require('../../models/Chart');
+const Album = require('../../models/Album');
 
 // @route   POST api/results/billboard-hot-100/result/calculate
 // @desc    Calculate results for Billboard Hot 100 chart
@@ -44,16 +45,16 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                 });
 
                 //iterate through all users having an album for Billboard Hot 100
-                User.
-                    find({ "billboardHot100.0": { "$exists": true } }).
+                Album.
+                    find({chart: chartObject.id}).
                     cursor().
-                    on('data', async function (user) {
+                    on('data', async function (album) {
 
                         let totalPoints = 0.0;
                         let songsWithPoints = [];
 
                         //iterate through user's album array
-                        user.billboardHot100.map(song => {
+                        album.songs.map(song => {
                             //format each song into unique string
                             const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
                             //find this song's index in Billboard Hot 100 by comparing unique strings
@@ -89,19 +90,16 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                             });
                         })
 
-                        //delete album array for Billboard Hot 100 from user object
-                        user.billboardHot100 = undefined;
-
                         //update leaderboard field on newResult object
                         newResult.leaderboard.push({
-                            user: user._id,
-                            username: user.username,
+                            user: album._id,
+                            username: album.username,
                             points: totalPoints,
                             songsWithPoints: songsWithPoints
                         });
 
-                        //save user to database
-                        await user.save();
+                        //delete album
+                        await album.remove();
                     }).
                     on('end', async () => {
                         //save result to database
@@ -224,16 +222,16 @@ router.post('/spotify-top-200-global/result/calculate',
                 });
 
                 //iterate through all users having an album for Spotify Top 200 Global
-                User.
-                    find({ "spotifyTop200Global.0": { "$exists": true } }).
+                Album.
+                    find({chart: chartObject.id}).
                     cursor().
-                    on('data', async function (user) {
+                    on('data', async function (album) {
 
                         let totalPoints = 0.0;
                         let songsWithPoints = [];
 
                         //iterate through user's album array
-                        user.spotifyTop200Global.map(song => {
+                        album.songs.map(song => {
                             //format each song into unique string
                             const formattedSong = (song.artist.split(" ")[0] + '-' + song.title.split("(")[0]).trim().toLowerCase().replace(/[^a-z]/g, "");
                             //find this song's index in Spotify Top 200 Global by comparing unique strings
@@ -267,21 +265,18 @@ router.post('/spotify-top-200-global/result/calculate',
                                 artist: song.artist,
                                 leadSingle: song.leadSingle
                             });
-                        })
-
-                        //delete album array for Spotify Top 200 Global from user object
-                        user.spotifyTop200Global = undefined;
+                        });
 
                         //update leaderboard field on newResult object
                         newResult.leaderboard.push({
-                            user: user._id,
-                            username: user.username,
+                            user: album._id,
+                            username: album.username,
                             points: totalPoints,
                             songsWithPoints: songsWithPoints
                         });
 
-                        //save user to database
-                        await user.save();
+                        //delete album
+                        await album.remove();
                     }).
                     on('end', async () => {
                         //save result to database

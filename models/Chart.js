@@ -5,6 +5,9 @@ const ChartSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    prizePool: {
+        type: Number,
+    },
     cost: {
         type: Number
     },

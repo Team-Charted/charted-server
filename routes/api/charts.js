@@ -37,6 +37,8 @@ router.post('/',
     auth,
     //name must be present
     body('name').notEmpty().withMessage('Chart name is required'),
+    //prizePool must be present
+    body('prizePool').notEmpty().withMessage('Chart prize pool is required'),
     //cost must be present
     body('cost').notEmpty().withMessage('Chart cost is required'),
     //type must be present
@@ -50,7 +52,7 @@ router.post('/',
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { name, cost, type, nextDate } = req.body;
+        const { name, prizePool, cost, type, nextDate } = req.body;
 
         try {
             //check if request was sent by an admin
@@ -65,6 +67,7 @@ router.post('/',
                 //create new Chart object
                 chart = new Chart({
                     name: name,
+                    prizePool: prizePool,
                     cost: cost,
                     type: type,
                     nextDate: nextDate
