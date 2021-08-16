@@ -11,7 +11,7 @@ const auth = require('../../middleware/auth');
 // @route   GET api/searches
 // @desc    Get songs search results
 // @access  Private
-router.get('/', auth, async (req, res) => {
+router.post('/', auth, async (req, res) => {
     try {
         let searchResults = [];
 
