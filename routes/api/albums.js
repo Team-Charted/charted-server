@@ -8,13 +8,12 @@ const Album = require('../../models/Album');
 const Chart = require('../../models/Chart');
 const User = require('../../models/User');
 
-// @route   GET api/albums/billboard-hot-100
-// @desc    Get current user's album for Billboard Hot 100
+// @route   GET api/albums/:chart_id
+// @desc    Get current user's album by chart ID
 // @access  Private
-router.get('/billboard-hot-100', auth, async (req, res) => {
+router.get('/:chart_id', async (req, res) => {
     try {
-        const chart = await Chart.findOne({name: 'Billboard Hot 100'});
-        const album = await Album.findOne({user: req.user.id, chart: chart.id});
+        const album = await Album.findOne({user: req.user.id, chart: req.params.chart.id});
         if (!album) {
             return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
         }
@@ -23,12 +22,12 @@ router.get('/billboard-hot-100', auth, async (req, res) => {
         console.log(err.message);
         res.status(500).send('Server error');
     }
-});
+})
 
-// @route   POST api/albums/billboard-hot-100
-// @desc    Create/edit current user's album for Billboard Hot 100
+// @route   POST api/albums/:chart_id
+// @desc    Create/edit current user's album by chart ID
 // @access  Private
-router.post('/billboard-hot-100',
+router.post('/:chart_id',
     auth,
     //songs array must be 9 elements long
     body('songs').isArray({ min: 9, max: 9 }).withMessage('9 songs required'),
@@ -43,72 +42,15 @@ router.post('/billboard-hot-100',
 
         try {
             let user = await User.findById(req.user.id);
-            const chart = await Chart.findOne({name: 'Billboard Hot 100'});
-            if (user.coins < 50) {
+            const chart = await Chart.findById(req.params.chart_id);
+            if (user.coins < chart.cost) {
                 return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
             }
-            user.coins -= 50;
+            user.coins -= chart.cost;
             await user.save();
 
             const album = new Album({
-                chart: chart.id,
-                user: user.id,
-                songs: songs
-            });
-
-            album.save();
-
-            res.json(album);
-        } catch (err) {
-            console.log(err.message);
-            res.status(500).send('Server error');
-        }
-    });
-
-// @route   GET api/albums/spotify-top-200-global
-// @desc    Get current user's album for Spotify Top 200 Global
-// @access  Private
-router.get('/spotify-top-200-global', auth, async (req, res) => {
-    try {
-        const chart = await Chart.findOne({name: 'Spotify Top 200: Global'});
-        const album = await Album.findOne({user: req.user.id, chart: chart.id});
-        if (!album) {
-            return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
-        }
-        res.json(album);
-    } catch (err) {
-        console.log(err.message);
-        res.status(500).send('Server error');
-    }
-});
-
-// @route   POST api/albums/spotify-top-200-global
-// @desc    Create/edit current user's album for Spotify Top 200 Global
-// @access  Private
-router.post('/spotify-top-200-global',
-    auth,
-    //songs array must be 9 elements long
-    body('songs').isArray({ min: 9, max: 9 }).withMessage('9 songs required'),
-    async (req, res) => {
-        //validation error handling
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const { songs } = req.body;
-
-        try {
-            let user = await User.findById(req.user.id);
-            const chart = await Chart.findOne({name: 'Spotify Top 200: Global'});
-            if (user.coins < 50) {
-                return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
-            }
-            user.coins -= 50;
-            await user.save();
-
-            const album = new Album({
-                chart: chart.id,
+                chart: req.params.chart_id,
                 user: user.id,
                 songs: songs
             });
