@@ -19,10 +19,13 @@ const AlbumSchema = new mongoose.Schema({
             },
             leadSingle: {
                 type: Boolean,
+            },
+            imageURL: {
+                type: String
+            },
+            credits:{
+                type: Number,
             }
-            // credits:{
-            //     type: Number,
-            // }
         }
     ]
 });

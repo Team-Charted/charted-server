@@ -11,11 +11,11 @@ const User = require('../../models/User');
 // @route   GET api/albums/:chart_id
 // @desc    Get current user's album by chart ID
 // @access  Private
-router.get('/:chart_id', async (req, res) => {
+router.get('/:chart_id', auth, async (req, res) => {
     try {
-        const album = await Album.findOne({user: req.user.id, chart: req.params.chart.id});
+        const album = await Album.findOne({user: req.user.id, chart: req.params.chart_id});
         if (!album) {
-            return res.status(400).json({ errors: [{ msg: 'Album does not exist' }] });
+            return res.json([]);
         }
         res.json(album);
     } catch (err) {
@@ -43,13 +43,19 @@ router.post('/:chart_id',
         try {
             let user = await User.findById(req.user.id);
             const chart = await Chart.findById(req.params.chart_id);
+            let album = await Album.findOne({ chart: req.params.chart_id, user: req.user.id });
+            if(album) {
+                album.songs = songs;
+                album.save();
+                return res.json(album);
+            }
             if (user.coins < chart.cost) {
                 return res.status(400).json({ errors: [{ msg: 'Not enough coins' }] });
             }
             user.coins -= chart.cost;
             await user.save();
 
-            const album = new Album({
+            album = new Album({
                 chart: req.params.chart_id,
                 user: user.id,
                 songs: songs
