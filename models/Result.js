@@ -9,6 +9,10 @@ const ResultSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    calculatedAt: {
+        type: Date,
+        default: Date.now
+    },
     leaderboard: [
         {
             user: {

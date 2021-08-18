@@ -11,6 +11,39 @@ const Result = require('../../models/Result');
 const Chart = require('../../models/Chart');
 const Album = require('../../models/Album');
 
+// @route   GET api/results
+// @desc    Get all results
+// @access  Private
+router.get('/', auth, async (req, res) => {
+    try {
+        //get all results sorted from latest to oldest
+        const results = await Result.find().select('-leaderboard').sort({ calculatedAt: -1 });
+        res.json(results);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Server error");
+    }
+});
+
+// @route   GET api/results/:result_id
+// @desc    Get result by result ID
+// @access  Private
+router.get('/:result_id', auth, async (req, res) => {
+    try {
+        const result = await Result.findById(req.params.result_id);
+        if(!result) {
+            return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
+        }
+        res.json(result)
+    } catch(err) {
+        console.error(err.message);
+        if(err.kind === 'ObjectId') {
+            return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
+        }
+        res.status(500).send("Server error");
+    }
+})
+
 // @route   POST api/results/billboard-hot-100/result/calculate
 // @desc    Calculate results for Billboard Hot 100 chart
 // @access  Admin
@@ -46,7 +79,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
 
                 //iterate through all users having an album for Billboard Hot 100
                 Album.
-                    find({chart: chartObject.id}).
+                    find({ chart: chartObject.id }).
                     cursor().
                     on('data', async function (album) {
 
@@ -218,7 +251,7 @@ router.post('/spotify-top-200-global/result/calculate',
 
                 //iterate through all users having an album for Spotify Top 200 Global
                 Album.
-                    find({chart: chartObject.id}).
+                    find({ chart: chartObject.id }).
                     cursor().
                     on('data', async function (album) {
 
