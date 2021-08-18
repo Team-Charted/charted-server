@@ -43,8 +43,10 @@ router.post('/',
     body('cost').notEmpty().withMessage('Chart cost is required'),
     //type must be present
     body('type').notEmpty().withMessage('Chart type is required'),
-    //nextDate must be present
-    body('nextDate').notEmpty().withMessage('Next chart date is required'),
+    //date must be present
+    body('date').notEmpty().withMessage('Next chart date is required'),
+    //endTime must be present
+    body('endTime').notEmpty().withMessage('endTime Unix time is required'),
     async (req, res) => {
         //validation error handling
         const errors = validationResult(req);
@@ -52,7 +54,7 @@ router.post('/',
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { name, prizePool, cost, type, nextDate } = req.body;
+        const { name, prizePool, cost, type, date, endTime } = req.body;
 
         try {
             //check if request was sent by an admin
@@ -70,7 +72,8 @@ router.post('/',
                     prizePool: prizePool,
                     cost: cost,
                     type: type,
-                    nextDate: nextDate
+                    date: date,
+                    endTime: endTime
                 });
 
                 await chart.save();

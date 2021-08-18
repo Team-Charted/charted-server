@@ -94,6 +94,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                         newResult.leaderboard.push({
                             user: album._id,
                             username: album.username,
+                            albumName: album.title,
                             points: totalPoints,
                             songsWithPoints: songsWithPoints
                         });
@@ -105,13 +106,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                         //save result to database
                         await newResult.save();
 
-                        //TODO: update nextDate on chartObject
-                        // let date = chartObject.nextDate;
-                        // let dateInt = parseInt(date.toString().slice(-2));
-                        // let nextDateInt = dateInt + 7;
-                        // let newDate = date.toString().slice(0, -2) + nextDateInt.toString();
-                        // chartObject.nextDate = newDate;
-                        // await chartObject.save();
+                        //TODO: update date and endTime on chartObject
 
                         res.json("Successfully updated leaderboard");
                     });
@@ -271,6 +266,7 @@ router.post('/spotify-top-200-global/result/calculate',
                         newResult.leaderboard.push({
                             user: album._id,
                             username: album.username,
+                            albumName: album.title,
                             points: totalPoints,
                             songsWithPoints: songsWithPoints
                         });
@@ -282,13 +278,7 @@ router.post('/spotify-top-200-global/result/calculate',
                         //save result to database
                         await newResult.save();
 
-                        //TODO: update nextDate on chartObject
-                        // let date = chartObject.nextDate;
-                        // let dateInt = parseInt(date.toString().slice(3, 5));
-                        // let nextDateInt = dateInt + 1;
-                        // let newDate = date.toString().slice(0, 3) + nextDateInt.toString() + date.toString().slice(5);
-                        // chartObject.nextDate = newDate;
-                        // await chartObject.save();
+                        //TODO: update date and endTime on chartObject
 
                         res.json("Successfully updated leaderboard");
                     });

@@ -29,6 +29,8 @@ router.get('/:chart_id', auth, async (req, res) => {
 // @access  Private
 router.post('/:chart_id',
     auth,
+    //title must be present
+    body('title').notEmpty().withMessage('Album title is required'),
     //songs array must be 9 elements long
     body('songs').isArray({ min: 9, max: 9 }).withMessage('9 songs required'),
     async (req, res) => {
@@ -38,11 +40,15 @@ router.post('/:chart_id',
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { songs } = req.body;
+        const { title, songs } = req.body;
 
         try {
             let user = await User.findById(req.user.id);
             const chart = await Chart.findById(req.params.chart_id);
+            if(!chart) {
+                return res.status(400).json({ errors: [{ msg: 'Chart not found' }] });
+            }
+            
             let album = await Album.findOne({ chart: req.params.chart_id, user: req.user.id });
             if(album) {
                 album.songs = songs;
@@ -58,6 +64,7 @@ router.post('/:chart_id',
             album = new Album({
                 chart: req.params.chart_id,
                 user: user.id,
+                title: title,
                 songs: songs
             });
 

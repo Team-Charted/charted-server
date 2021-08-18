@@ -9,6 +9,10 @@ const AlbumSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "chart"
     },
+    title: {
+        type: String,
+        required: true
+    },
     songs: [
         {
             title: {
