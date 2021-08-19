@@ -15,10 +15,6 @@ const ResultSchema = new mongoose.Schema({
     },
     leaderboard: [
         {
-            user: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'user'
-            },
             username: {
                 type: String
             },
@@ -42,9 +38,6 @@ const ResultSchema = new mongoose.Schema({
                     leadSingle: {
                         type: Boolean,
                     }
-                    // credits:{
-                    //     type: Number,
-                    // }
                 }
             ]
         }

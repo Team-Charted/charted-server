@@ -10,6 +10,7 @@ const auth = require('../../middleware/auth');
 const Result = require('../../models/Result');
 const Chart = require('../../models/Chart');
 const Album = require('../../models/Album');
+const User = require('../../models/User');
 
 // @route   GET api/results
 // @desc    Get all results
@@ -31,13 +32,13 @@ router.get('/', auth, async (req, res) => {
 router.get('/:result_id', auth, async (req, res) => {
     try {
         const result = await Result.findById(req.params.result_id);
-        if(!result) {
+        if (!result) {
             return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
         }
         res.json(result)
-    } catch(err) {
+    } catch (err) {
         console.error(err.message);
-        if(err.kind === 'ObjectId') {
+        if (err.kind === 'ObjectId') {
             return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
         }
         res.status(500).send("Server error");
@@ -60,12 +61,12 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
             getChart('hot-100', async (err, chart) => {
                 if (err) reject(err);
 
-                //check if result has already been calculated
+                // check if result has already been calculated
                 const result = await Result.findOne({ date: chart.week, chart: chartObject.id });
                 if (result)
                     return res.status(400).json({ errors: [{ msg: 'Leaderboard already updated' }] });
 
-                const newResult = new Result({
+                let newResult = new Result({
                     chart: chartObject.id,
                     date: chart.week,
                     leaderboard: []
@@ -78,71 +79,72 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                 });
 
                 //iterate through all users having an album for Billboard Hot 100
-                Album.
-                    find({ chart: chartObject.id }).
-                    cursor().
-                    on('data', async function (album) {
+                const albums = await Album.
+                    find({ chart: chartObject.id });
 
-                        let totalPoints = 0.0;
-                        let songsWithPoints = [];
+                albums.forEach(async (album) => {
 
-                        //iterate through user's album array
-                        album.songs.map(song => {
-                            //format each song into unique string
-                            const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
-                            //find this song's index in Billboard Hot 100 by comparing unique strings
-                            const index = chartSongs.findIndex(song => song === formattedSong);
+                    let totalPoints = 0.0;
+                    let songsWithPoints = [];
 
-                            let pointsForCurrentSong = 0.0;
+                    //iterate through user's album array
+                    album.songs.map(song => {
+                        //format each song into unique string
+                        const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
+                        //find this song's index in Billboard Hot 100 by comparing unique strings
+                        const index = chartSongs.findIndex(song => song === formattedSong);
 
-                            if (index !== -1) {
+                        let pointsForCurrentSong = 0.0;
 
-                                let theSong = chart.songs[index];
+                        if (index !== -1) {
 
-                                //calculate points
-                                let currentPosition = theSong.rank;
-                                let lastWeekPosition = parseInt(theSong.position.positionLastWeek);
-                                let peakPosition = parseInt(theSong.position.peakPosition);
-                                let weeksOnChart = parseInt(theSong.position.weeksOnChart);
+                            let theSong = chart.songs[index];
 
-                                pointsForCurrentSong = (2 * lastWeekPosition + peakPosition) / (weeksOnChart + 3 * currentPosition);
+                            //calculate points
+                            let currentPosition = theSong.rank;
+                            let lastWeekPosition = isNaN(theSong.position.positionLastWeek) ? 0 : parseInt(theSong.position.positionLastWeek);
+                            let peakPosition = isNaN(theSong.position.peakPosition) ? 0 : parseInt(theSong.position.peakPosition);
+                            let weeksOnChart = isNaN(theSong.position.weeksOnChart) ? 0 : parseInt(theSong.position.weeksOnChart);
 
-                                //double the points if it was the lead single
-                                if (song.leadSingle) {
-                                    pointsForCurrentSong *= 2;
-                                }
+                            pointsForCurrentSong = (2 * lastWeekPosition + peakPosition) / (weeksOnChart + 3 * currentPosition);
 
-                                //add these points to the total points
-                                totalPoints = totalPoints + pointsForCurrentSong;
+                            //double the points if it was the lead single
+                            if (song.leadSingle) {
+                                pointsForCurrentSong *= 2;
                             }
-                            songsWithPoints.push({
-                                points: pointsForCurrentSong,
-                                title: song.title,
-                                artist: song.artist,
-                                leadSingle: song.leadSingle
-                            });
-                        })
 
-                        //update leaderboard field on newResult object
-                        newResult.leaderboard.push({
-                            user: album._id,
-                            username: album.username,
-                            albumName: album.title,
-                            points: totalPoints,
-                            songsWithPoints: songsWithPoints
+                            //add these points to the total points
+                            totalPoints = totalPoints + pointsForCurrentSong;
+                        }
+                        // console.log(pointsForCurrentSong);
+                        songsWithPoints.push({
+                            points: pointsForCurrentSong,
+                            title: song.title,
+                            artist: song.artist,
+                            leadSingle: song.leadSingle
                         });
-
-                        //delete album
-                        await album.remove();
-                    }).
-                    on('end', async () => {
-                        //save result to database
-                        await newResult.save();
-
-                        //TODO: update date and endTime on chartObject
-
-                        res.json("Successfully updated leaderboard");
                     });
+
+                    const user = await User.findById(album.user);
+
+                    //update leaderboard field on newResult object
+                    const leaderboardEntry = {
+                        username: user.username,
+                        albumName: album.title,
+                        points: totalPoints,
+                        songsWithPoints: songsWithPoints
+                    };
+                    newResult.leaderboard.push(leaderboardEntry);
+
+                    //save newResult to database
+                    await newResult.save();
+                    //delete album
+                    await album.remove();
+                });
+
+                //TODO: update date and endTime on chartObject
+
+                res.json("Successfully updated leaderboard");
             });
         } else {
             return res.status(403).json({ errors: [{ msg: 'Forbidden' }] });
@@ -250,71 +252,74 @@ router.post('/spotify-top-200-global/result/calculate',
                 });
 
                 //iterate through all users having an album for Spotify Top 200 Global
-                Album.
-                    find({ chart: chartObject.id }).
-                    cursor().
-                    on('data', async function (album) {
+                const albums = await Album.
+                    find({ chart: chartObject.id });
 
-                        let totalPoints = 0.0;
-                        let songsWithPoints = [];
+                albums.forEach(async (album) => {
 
-                        //iterate through user's album array
-                        album.songs.map(song => {
-                            //format each song into unique string
-                            const formattedSong = (song.artist.split(" ")[0] + '-' + song.title.split("(")[0]).trim().toLowerCase().replace(/[^a-z]/g, "");
-                            //find this song's index in Spotify Top 200 Global by comparing unique strings
-                            const currentIndex = currentChartSongs.findIndex(song => song === formattedSong);
+                    let totalPoints = 0.0;
+                    let songsWithPoints = [];
 
-                            let pointsForCurrentSong = 0.0;
+                    //iterate through user's album array
+                    album.songs.map(song => {
+                        //format each song into unique string
+                        const formattedSong = (song.artist.split(" ")[0] + '-' + song.title.split("(")[0]).trim().toLowerCase().replace(/[^a-z]/g, "");
+                        //find this song's index in Spotify Top 200 Global by comparing unique strings
+                        const currentIndex = currentChartSongs.findIndex(song => song === formattedSong);
 
-                            if (currentIndex !== -1) {
-                                const previousIndex = previousChartSongs.findIndex(song => song === formattedSong);
-                                //if song charted previously
-                                if (previousIndex !== -1) {
-                                    //calculate points
-                                    let previousPosition = previousChart.list[previousIndex].place;
-                                    let previousStreams = previousChart.list[previousIndex].streams;
-                                    let currentPosition = currentChart.list[currentIndex].place;
-                                    let currentStreams = currentChart.list[currentIndex].streams;
+                        let pointsForCurrentSong = 0.0;
 
-                                    pointsForCurrentSong = (previousPosition + 2 * currentStreams) / (previousStreams + 2 * currentPosition);
-                                } else {
-                                    let currentPosition = currentChart.list[currentIndex].place;
-                                    let currentStreams = currentChart.list[currentIndex].streams;
+                        if (currentIndex !== -1) {
+                            const previousIndex = previousChartSongs.findIndex(song => song === formattedSong);
+                            //if song charted previously
+                            if (previousIndex !== -1) {
+                                //calculate points
+                                let previousPosition = previousChart.list[previousIndex].place;
+                                let previousStreams = previousChart.list[previousIndex].streams;
+                                let currentPosition = currentChart.list[currentIndex].place;
+                                let currentStreams = currentChart.list[currentIndex].streams;
 
-                                    pointsForCurrentSong = 2 * (currentStreams) / (currentPosition);
-                                }
-                                totalPoints = totalPoints + pointsForCurrentSong;
+                                pointsForCurrentSong = (previousPosition + 2 * currentStreams) / (previousStreams + 2 * currentPosition);
+                            } else {
+                                let currentPosition = currentChart.list[currentIndex].place;
+                                let currentStreams = currentChart.list[currentIndex].streams;
+
+                                pointsForCurrentSong = 2 * (currentStreams) / (currentPosition);
                             }
+                            totalPoints = totalPoints + pointsForCurrentSong;
+                        }
 
-                            songsWithPoints.push({
-                                points: pointsForCurrentSong,
-                                title: song.title,
-                                artist: song.artist,
-                                leadSingle: song.leadSingle
-                            });
+                        songsWithPoints.push({
+                            points: pointsForCurrentSong,
+                            title: song.title,
+                            artist: song.artist,
+                            leadSingle: song.leadSingle
                         });
-
-                        //update leaderboard field on newResult object
-                        newResult.leaderboard.push({
-                            user: album._id,
-                            username: album.username,
-                            albumName: album.title,
-                            points: totalPoints,
-                            songsWithPoints: songsWithPoints
-                        });
-
-                        //delete album
-                        await album.remove();
-                    }).
-                    on('end', async () => {
-                        //save result to database
-                        await newResult.save();
-
-                        //TODO: update date and endTime on chartObject
-
-                        res.json("Successfully updated leaderboard");
                     });
+
+                    const user = await User.findById(album.user);
+
+                    //update leaderboard field on newResult object
+                    const leaderboardEntry = {
+                        username: user.username,
+                        albumName: album.title,
+                        points: totalPoints,
+                        songsWithPoints: songsWithPoints
+                    };
+                    newResult.leaderboard.push(leaderboardEntry);
+
+                    //save newResult to database
+                    await newResult.save();
+                    //delete album
+                    await album.remove();
+
+                });
+
+
+                //TODO: update date and endTime on chartObject
+
+                res.json("Successfully updated leaderboard");
+
             } else {
                 return res.status(403).json({ errors: [{ msg: 'Forbidden' }] });
             }

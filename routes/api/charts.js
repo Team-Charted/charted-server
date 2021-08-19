@@ -13,17 +13,8 @@ const User = require('../../models/User');
 // @access  Private
 router.get('/', auth, async (req, res) => {
     try {
-        let charts = [];
-        Chart.
-            find().
-            cursor().
-            on('data', async function (doc) {
-                charts.push(doc)
-            }).
-            on('end', async () => {
-                res.json(charts);
-            });
-
+        const charts = await Chart.find();
+        res.json(charts);
     } catch (err) {
         console.log(err.message);
         res.status(500).send('Server error');
