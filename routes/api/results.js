@@ -18,7 +18,7 @@ const User = require('../../models/User');
 router.get('/', auth, async (req, res) => {
     try {
         //get all results sorted from latest to oldest
-        const results = await Result.find().select('-leaderboard').sort({ calculatedAt: -1 });
+        const results = await Result.find().select('-leaderboard').populate('chart', ['name', 'prizePool', 'cost', 'type']).sort({ calculatedAt: -1 });
         res.json(results);
     } catch (err) {
         console.error(err.message);
@@ -31,11 +31,40 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/:result_id', auth, async (req, res) => {
     try {
-        const result = await Result.findById(req.params.result_id);
+        const result = await Result.findById(req.params.result_id).select('-leaderboard.songsWithPoints').populate('chart', ['name', 'prizePool', 'cost', 'type']);
         if (!result) {
             return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
         }
         res.json(result)
+    } catch (err) {
+        console.error(err.message);
+        if (err.kind === 'ObjectId') {
+            return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
+        }
+        res.status(500).send("Server error");
+    }
+})
+
+// @route   GET api/results/:result_id/album
+// @desc    Get current user's album for particular result by result ID
+// @access  Private
+router.get('/:result_id/album', auth, async (req, res) => {
+    try {
+        let user = await User.findById(req.user.id);
+
+        const result = await Result.findById(req.params.result_id);
+        if (!result) {
+            return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
+        }
+
+        const leaderboard = result.leaderboard;
+        leaderboard.forEach(entry => {
+            if(entry.username == user.username) {
+               return res.json(entry.songsWithPoints);
+            }
+        });
+
+        return res.status(400).json({ errors: [{ msg: 'Album not found' }] });
     } catch (err) {
         console.error(err.message);
         if (err.kind === 'ObjectId') {
@@ -121,6 +150,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                             points: pointsForCurrentSong,
                             title: song.title,
                             artist: song.artist,
+                            imageURL: song.imageURL,
                             leadSingle: song.leadSingle
                         });
                     });

@@ -37,6 +37,9 @@ const ResultSchema = new mongoose.Schema({
                     },
                     leadSingle: {
                         type: Boolean,
+                    },
+                    imageURL: {
+                        type: String
                     }
                 }
             ]
