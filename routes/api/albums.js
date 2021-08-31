@@ -29,8 +29,6 @@ router.get('/:chart_id', auth, async (req, res) => {
 // @access  Private
 router.post('/:chart_id',
     auth,
-    //title must be present
-    body('title').notEmpty().withMessage('Album title is required'),
     //songs array must be 9 elements long
     body('songs').isArray({ min: 9, max: 9 }).withMessage('9 songs required'),
     async (req, res) => {
@@ -40,7 +38,7 @@ router.post('/:chart_id',
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { title, songs } = req.body;
+        const { songs } = req.body;
 
         try {
             let user = await User.findById(req.user.id);
@@ -64,7 +62,6 @@ router.post('/:chart_id',
             album = new Album({
                 chart: req.params.chart_id,
                 user: user.id,
-                title: title,
                 songs: songs
             });
 

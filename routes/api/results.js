@@ -18,7 +18,7 @@ const User = require('../../models/User');
 router.get('/', auth, async (req, res) => {
     try {
         //get all results sorted from latest to oldest
-        const results = await Result.find().select('-leaderboard').populate('chart', ['name', 'prizePool', 'cost', 'type']).sort({ calculatedAt: -1 });
+        const results = await Result.find().select('-leaderboard').populate('chart').sort({ calculatedAt: -1 });
         res.json(results);
     } catch (err) {
         console.error(err.message);
@@ -31,7 +31,7 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/:result_id', auth, async (req, res) => {
     try {
-        const result = await Result.findById(req.params.result_id).select('-leaderboard.songsWithPoints').populate('chart', ['name', 'prizePool', 'cost', 'type']);
+        const result = await Result.findById(req.params.result_id).select('-leaderboard.songsWithPoints').populate('chart');
         if (!result) {
             return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
         }
@@ -160,7 +160,6 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                     //update leaderboard field on newResult object
                     const leaderboardEntry = {
                         username: user.username,
-                        albumName: album.title,
                         points: totalPoints,
                         songsWithPoints: songsWithPoints
                     };
@@ -332,7 +331,6 @@ router.post('/spotify-top-200-global/result/calculate',
                     //update leaderboard field on newResult object
                     const leaderboardEntry = {
                         username: user.username,
-                        albumName: album.title,
                         points: totalPoints,
                         songsWithPoints: songsWithPoints
                     };

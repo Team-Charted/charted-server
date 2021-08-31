@@ -13,6 +13,9 @@ const ResultSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    winnings: {
+        type: Number
+    },
     leaderboard: [
         {
             username: {
@@ -20,9 +23,6 @@ const ResultSchema = new mongoose.Schema({
             },
             points: {
                 type: Number
-            },
-            albumName: {
-                type: String
             },
             songsWithPoints: [
                 {
