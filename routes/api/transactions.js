@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const axios = require('axios');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.post('/link-bank-account',
         try {
             const user = await User.findById(req.user.id);
 
-            if(user.fundAccountID) {
+            if (user.fundAccountID) {
                 return res.status(400).json({ errors: [{ msg: 'Account already linked' }] });
             }
 
@@ -92,30 +93,30 @@ router.post('/withdraw',
                 return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
             }
 
-            // const body = {
-            //     account_number: config.get('accountNumber'),
-            //     fund_account_id: user.fundAccountID,
-            //     amount: amount,
-            //     currency: "INR",
-            //     mode: "NEFT",
-            //     purpose: "payout"
-            // };
+            const body = {
+                account_number: config.get('accountNumber'),
+                fund_account_id: user.fundAccountID,
+                amount: amount * 100,
+                currency: "INR",
+                mode: "NEFT",
+                purpose: "payout"
+            };
 
-            // const reqConfig = {
-            //     headers: {
-            //         'Content-Type': 'application/json'
-            //     },
-            //     auth: {
-            //         username: config.get('razorpayKeyID'),
-            //         password: config.get('razorpayKeySecret')
-            //     }
-            // }
+            const reqConfig = {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                auth: {
+                    username: config.get('razorpayKeyID'),
+                    password: config.get('razorpayKeySecret')
+                }
+            }
 
-            //send request to Razorpay
-            // const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
+            // send request to Razorpay
+            const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
 
-            //TODO: save transaction to user in databse
-            //update user's coins
+            // TODO: save transaction to user in databse
+            // update user's coins
             user.coins -= amount;
             await user.save();
 
@@ -155,41 +156,75 @@ router.post('/add',
                 return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
             }
 
-            // const body = {
-            //     account_number: config.get('accountNumber'),
-            //     fund_account_id: user.fundAccountID,
-            //     amount: amount,
-            //     currency: "INR",
-            //     mode: "NEFT",
-            //     purpose: "payout"
-            // };
+            const body = {
+                amount: amount * 100,
+                currency: "INR"
+            };
 
-            // const reqConfig = {
-            //     headers: {
-            //         'Content-Type': 'application/json'
-            //     },
-            //     auth: {
-            //         username: config.get('razorpayKeyID'),
-            //         password: config.get('razorpayKeySecret')
-            //     }
-            // }
+            const reqConfig = {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                auth: {
+                    username: config.get('razorpayKeyID'),
+                    password: config.get('razorpayKeySecret')
+                }
+            };
 
-            // //send request to Razorpay
-            // const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
+            //send request to Razorpay
+            const response = await axios.post('https://api.razorpay.com/v1/orders', JSON.stringify(body), reqConfig);
+
+            const order = response.data;
+
+            res.json(order);
+        } catch (err) {
+            console.log(err.message);
+            res.status(500).send('Server error');
+        }
+    });
+
+router.post("/add/success",
+    auth,
+    async (req, res) => {
+        try {
+            const user = await User.findById(req.user.id);
+
+            // getting the details back from our font-end
+            const {
+                amount,
+                orderCreationId,
+                razorpayPaymentId,
+                razorpayOrderId,
+                razorpaySignature,
+            } = req.body;
+
+            // Creating our own digest
+            // The format should be like this:
+            // digest = hmac_sha256(orderCreationId + "|" + razorpayPaymentId, secret);
+            const shasum = crypto.createHmac("sha256", config.get('razorpayKeySecret'));
+
+            shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
+
+            const digest = shasum.digest("hex");
+
+            // comaparing our digest with the actual signature
+            if (digest !== razorpaySignature)
+                return res.status(400).json({ errors: [{ msg: 'Transaction not legit!' }] });
+
+            // THE PAYMENT IS LEGIT & VERIFIED
+            // YOU CAN SAVE THE DETAILS IN YOUR DATABASE IF YOU WANT
 
             //TODO: save transaction to user in databse
             //update user's coins
-            user.coins += amount;
+            user.coins += amount / 100;
             await user.save();
 
-            const data = {
-                amountAdded: amount,
-                balance: user.coins
-            }
-
-            res.json(data);
-        } catch (err) {
-            console.log(err.message);
+            res.json({
+                msg: "success",
+                orderId: razorpayOrderId,
+                paymentId: razorpayPaymentId,
+            });
+        } catch (error) {
             res.status(500).send('Server error');
         }
     });

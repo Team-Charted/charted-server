@@ -22,6 +22,7 @@
     "bcryptjs": "^2.4.3",
     "billboard-top-100": "^2.5.9",
     "config": "^3.3.6",
+    "crypto": "^1.0.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-validator": "^6.12.0",
