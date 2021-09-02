@@ -136,7 +136,7 @@ router.post('/withdraw',
                 user: user.id,
                 amount: amount,
                 type: "Withdraw",
-                razorpayID: response.id
+                razorpayID: response.data.id
             });
 
             await transaction.save();
