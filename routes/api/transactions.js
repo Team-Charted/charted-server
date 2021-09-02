@@ -1,7 +1,5 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const config = require('config');
 const axios = require('axios');
 const crypto = require('crypto');
@@ -10,6 +8,20 @@ const router = express.Router();
 
 const auth = require('../../middleware/auth');
 const User = require('../../models/User');
+const Transaction = require('../../models/Transaction');
+
+// @route   GET api/transactions
+// @desc    Get user's transactions
+// @access  Private
+router.get('/', auth, async (req, res) => {
+    try {
+        const transactions = await Transaction.find({ user: req.user.id }).sort({ createdAt: -1 });
+        res.json(transactions);
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).send('Server error');
+    }
+})
 
 // @route   POST api/transactions/link-bank-account
 // @desc    Create fund account for user on Razorpay using bank account
@@ -115,23 +127,26 @@ router.post('/withdraw',
             // send request to Razorpay
             const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
 
-            // TODO: save transaction to user in databse
             // update user's coins
             user.coins -= amount;
             await user.save();
 
-            const data = {
-                amountWithdrawn: amount,
-                balance: user.coins
-            }
+            // save transaction to user in databse
+            const transaction = new Transaction({
+                user: user.id,
+                amount: amount,
+                type: "Withdraw",
+                razorpayID: response.id
+            });
 
-            res.json(data);
+            await transaction.save();
+
+            res.json(transaction);
         } catch (err) {
             console.log(err.message);
             res.status(500).send('Server error');
         }
     });
-
 
 // @route   POST api/transactions/add
 // @desc    Add money to charted wallet
@@ -183,6 +198,9 @@ router.post('/add',
         }
     });
 
+// @route   POST api/transactions/add/success
+// @desc    Handler route for verification of add money transaction
+// @access  Private
 router.post("/add/success",
     auth,
     async (req, res) => {
@@ -214,16 +232,21 @@ router.post("/add/success",
             // THE PAYMENT IS LEGIT & VERIFIED
             // YOU CAN SAVE THE DETAILS IN YOUR DATABASE IF YOU WANT
 
-            //TODO: save transaction to user in databse
             //update user's coins
             user.coins += amount / 100;
             await user.save();
 
-            res.json({
-                msg: "success",
-                orderId: razorpayOrderId,
-                paymentId: razorpayPaymentId,
+            // save transaction to user in databse
+            const transaction = new Transaction({
+                user: user.id,
+                amount: amount / 100,
+                type: "Add",
+                razorpayID: razorpayPaymentId
             });
+
+            await transaction.save();
+
+            res.json(transaction);
         } catch (error) {
             res.status(500).send('Server error');
         }
