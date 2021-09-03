@@ -55,7 +55,7 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                     let songsWithPoints = [];
 
                     //iterate through user's album array
-                    album.songs.map(song => {
+                    album.songs.map((song, predictionIndex) => {
                         //format each song into unique string
                         const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
                         //find this song's index in Billboard Hot 100 by comparing unique strings
@@ -68,20 +68,30 @@ router.post('/billboard-hot-100/result/calculate', auth, async (req, res) => {
                             let theSong = chart.songs[index];
 
                             //calculate points
-                            let currentPosition = theSong.rank;
+                            let rank = theSong.rank;
+                            let predictionPosition = predictionIndex + 1;
                             let lastWeekPosition = isNaN(theSong.position.positionLastWeek) ? 0 : parseInt(theSong.position.positionLastWeek);
                             let peakPosition = isNaN(theSong.position.peakPosition) ? 0 : parseInt(theSong.position.peakPosition);
                             let weeksOnChart = isNaN(theSong.position.weeksOnChart) ? 0 : parseInt(theSong.position.weeksOnChart);
 
-                            pointsForCurrentSong = (2 * lastWeekPosition + peakPosition) / (weeksOnChart + 3 * currentPosition);
+                            let baseScore = ((10 - (rank - 1) / 10) * (10 - (rank - 1) / 10 - (Math.abs((rank - 1) / 10 - predictionPosition)) / 10));
+
+                            let stableIndex = weeksOnChart <= 50 ? ((weeksOnChart / 5) + 1) : 11;
+                            let newSongMultiplier = lastWeekPosition == 0 ? 2 : 1;
+                            let lastWeekJump = lastWeekPosition == 0 ? 0 : (lastWeekPosition - rank);
+                            let peakJump = peakPosition == 0 ? 0 : (peakPosition - rank);
+
+                            let bonuses = ((lastWeekJump + peakJump / 10) - (stableIndex)) * (newSongMultiplier);
 
                             //double the points if it was the lead single
                             if (song.leadSingle) {
                                 pointsForCurrentSong *= 2;
                             }
 
+                            pointsForCurrentSong = baseScore + bonuses;
+
                             //add these points to the total points
-                            totalPoints = totalPoints + pointsForCurrentSong;
+                            totalPoints += pointsForCurrentSong;
                         }
                         // console.log(pointsForCurrentSong);
                         songsWithPoints.push({
