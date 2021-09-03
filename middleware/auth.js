@@ -6,8 +6,8 @@ module.exports = (req, res, next) => {
     const token = req.header('x-auth-token');
 
     //check if no token
-    if(!token) {
-        return res.status(401).json({errors: [{msg: "No token, access denied"}]});
+    if (!token) {
+        return res.status(401).json({ errors: [{ msg: "No token, access denied" }] });
     }
 
     //verify token
@@ -16,7 +16,7 @@ module.exports = (req, res, next) => {
         //send logged in user object in req.user
         req.user = decoded.user;
         next();
-    } catch(err) {
-        res.status(401).json({errors: [{msg: "Invalid token, access denied"}]});
+    } catch (err) {
+        res.status(401).json({ errors: [{ msg: "Invalid token, access denied" }] });
     }
 }
