@@ -63,8 +63,8 @@ router.post('/link-bank-account',
                     'Content-Type': 'application/json'
                 },
                 auth: {
-                    username: config.get('razorpayKeyID'),
-                    password: config.get('razorpayKeySecret')
+                    username: process.env.razorpayKeyID,
+                    password: process.env.razorpayKeySecret
                 }
             }
 
@@ -106,7 +106,7 @@ router.post('/withdraw',
             }
 
             const body = {
-                account_number: config.get('accountNumber'),
+                account_number: process.env.accountNumber,
                 fund_account_id: user.fundAccountID,
                 amount: amount * 100,
                 currency: "INR",
@@ -119,8 +119,8 @@ router.post('/withdraw',
                     'Content-Type': 'application/json'
                 },
                 auth: {
-                    username: config.get('razorpayKeyID'),
-                    password: config.get('razorpayKeySecret')
+                    username: process.env.razorpayKeyID,
+                    password: process.env.razorpayKeySecret
                 }
             }
 
@@ -181,8 +181,8 @@ router.post('/add',
                     'Content-Type': 'application/json'
                 },
                 auth: {
-                    username: config.get('razorpayKeyID'),
-                    password: config.get('razorpayKeySecret')
+                    username: process.env.razorpayKeyID,
+                    password: process.env.razorpayKeySecret
                 }
             };
 
@@ -219,7 +219,7 @@ router.post("/add/success",
             // Creating our own digest
             // The format should be like this:
             // digest = hmac_sha256(orderCreationId + "|" + razorpayPaymentId, secret);
-            const shasum = crypto.createHmac("sha256", config.get('razorpayKeySecret'));
+            const shasum = crypto.createHmac("sha256", process.env.razorpayKeySecret);
 
             shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
 

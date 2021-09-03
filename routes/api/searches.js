@@ -19,7 +19,7 @@ router.post('/', auth, async (req, res) => {
         const encodedURI = encodeURI(`https://api.genius.com/search?q=${req.body.queryString}`);
         const reqConfig = {
             headers: {
-                'Authorization': `Bearer ${config.get('geniusAccessToken')}`
+                'Authorization': `Bearer ${process.env.geniusAccessToken}`
             }
         };
         const response = await axios.get(encodedURI, reqConfig);

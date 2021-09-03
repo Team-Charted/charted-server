@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
         return res.status(403).json({ errors: [{ msg: "No adminSecret, forbidden" }] });
     }
 
-    if (config.get('adminSecret') == adminSecret) {
+    if (process.env.adminSecret == adminSecret) {
         next();
     }
 

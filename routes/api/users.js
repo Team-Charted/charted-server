@@ -72,8 +72,8 @@ router.post('/',
                     'Content-Type': 'application/json'
                 },
                 auth: {
-                    username: config.get('razorpayKeyID'),
-                    password: config.get('razorpayKeySecret')
+                    username: process.env.razorpayKeyID,
+                    password: process.env.razorpayKeySecret
                 }
             }
 
@@ -93,7 +93,7 @@ router.post('/',
                 }
             };
 
-            jwt.sign(payload, config.get('jwtSecret'), { expiresIn: 3600 }, (err, token) => {
+            jwt.sign(payload, process.env.jwtSecret, { expiresIn: 3600 }, (err, token) => {
                 if (err) throw err;
 
                 //send success response with token
