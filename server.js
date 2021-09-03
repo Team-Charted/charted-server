@@ -11,6 +11,10 @@ connectDB();
 app.use(express.json({ extended: false }));
 app.use(fileUpload());
 
+app.get('/', (req, res) => {
+    res.send('Hello World');
+});
+
 //define routes
 app.use('/api/results', require('./routes/api/results'));
 app.use('/api/users', require('./routes/api/users'));
