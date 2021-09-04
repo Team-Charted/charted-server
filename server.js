@@ -1,6 +1,7 @@
 const express = require('express');
 const connectDB = require('./config/db');
 const fileUpload = require('express-fileupload');
+const cors = require('cors');
 
 const app = express();
 
@@ -8,6 +9,7 @@ const app = express();
 connectDB();
 
 //init middleware
+app.use(cors());
 app.use(express.json({ extended: false }));
 app.use(fileUpload());
 
