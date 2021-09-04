@@ -27,11 +27,11 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/:result_id', auth, async (req, res) => {
     try {
-        const result = await Result.findById(req.params.result_id).select('-leaderboard.songsWithPoints').populate('chart');
+        const result = await Result.findById(req.params.result_id).select('-leaderboard.songsWithPoints');
         if (!result) {
             return res.status(400).json({ errors: [{ msg: 'Result does not exist' }] });
         }
-        res.json(result)
+        res.json(result.leaderboard);
     } catch (err) {
         console.error(err.message);
         if (err.kind === 'ObjectId') {
