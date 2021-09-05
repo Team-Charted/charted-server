@@ -98,54 +98,55 @@ router.post('/withdraw',
 
         const { amount } = req.body;
 
-        try {
-            const user = await User.findById(req.user.id);
+        // try {
+        //     const user = await User.findById(req.user.id);
 
-            if (!user.fundAccountID) {
-                return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
-            }
+        //     if (!user.fundAccountID) {
+        //         return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
+        //     }
 
-            const body = {
-                account_number: process.env.accountNumber,
-                fund_account_id: user.fundAccountID,
-                amount: amount * 100,
-                currency: "INR",
-                mode: "NEFT",
-                purpose: "payout"
-            };
+        //     const body = {
+        //         account_number: process.env.accountNumber,
+        //         fund_account_id: user.fundAccountID,
+        //         amount: amount * 100,
+        //         currency: "INR",
+        //         mode: "NEFT",
+        //         purpose: "payout"
+        //     };
 
-            const reqConfig = {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                auth: {
-                    username: process.env.razorpayKeyID,
-                    password: process.env.razorpayKeySecret
-                }
-            }
+        //     const reqConfig = {
+        //         headers: {
+        //             'Content-Type': 'application/json'
+        //         },
+        //         auth: {
+        //             username: process.env.razorpayKeyID,
+        //             password: process.env.razorpayKeySecret
+        //         }
+        //     }
 
-            // send request to Razorpay
-            const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
+        //     // send request to Razorpay
+        //     const response = await axios.post('https://api.razorpay.com/v1/payouts', JSON.stringify(body), reqConfig);
 
-            // update user's coins
-            user.coins -= amount;
-            await user.save();
+        // update user's coins
+        user.coins -= amount;
+        await user.save();
 
-            // save transaction to user in databse
-            const transaction = new Transaction({
-                user: user.id,
-                amount: amount,
-                type: "Withdraw",
-                razorpayID: response.data.id
-            });
+        // save transaction to user in databse
+        const transaction = new Transaction({
+            user: user.id,
+            amount: amount,
+            type: "Withdraw"
+            // razorpayID: response.data.id
+        });
 
-            await transaction.save();
+        await transaction.save();
 
-            res.json(transaction);
-        } catch (err) {
-            console.log(err.message);
-            res.status(500).send('Server error');
-        }
+        res.json(transaction);
+        // }
+        // catch (err) {
+        //     console.log(err.message);
+        //     res.status(500).send('Server error');
+        // }
     });
 
 // @route   POST api/transactions/add
