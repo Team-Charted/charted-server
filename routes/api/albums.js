@@ -13,9 +13,9 @@ const User = require('../../models/User');
 // @access  Private
 router.get('/:chart_id', auth, async (req, res) => {
     try {
-        const album = await Album.findOne({user: req.user.id, chart: req.params.chart_id});
+        const album = await Album.findOne({ user: req.user.id, chart: req.params.chart_id });
         if (!album) {
-            return res.json([]);
+            return res.status(400).json({ errors: [{ msg: 'Album not found' }] });
         }
         res.json(album);
     } catch (err) {
@@ -43,12 +43,12 @@ router.post('/:chart_id',
         try {
             let user = await User.findById(req.user.id);
             const chart = await Chart.findById(req.params.chart_id);
-            if(!chart) {
+            if (!chart) {
                 return res.status(400).json({ errors: [{ msg: 'Chart not found' }] });
             }
-            
+
             let album = await Album.findOne({ chart: req.params.chart_id, user: req.user.id });
-            if(album) {
+            if (album) {
                 album.songs = songs;
                 album.save();
                 return res.json(album);
