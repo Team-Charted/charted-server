@@ -135,8 +135,8 @@ router.post('/withdraw',
             const transaction = new Transaction({
                 user: user.id,
                 amount: amount,
-                type: "Withdraw"
-                // razorpayID: response.data.id
+                type: "Withdraw",
+                razorpayID: ""
             });
 
             await transaction.save();
