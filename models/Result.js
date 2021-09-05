@@ -29,6 +29,9 @@ const ResultSchema = new mongoose.Schema({
                     points: {
                         type: Number
                     },
+                    songId: {
+                        type: String
+                    },
                     title: {
                         type: String,
                     },

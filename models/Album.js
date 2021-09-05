@@ -11,6 +11,9 @@ const AlbumSchema = new mongoose.Schema({
     },
     songs: [
         {
+            songId: {
+                type: String,
+            },
             title: {
                 type: String,
             },
@@ -23,7 +26,7 @@ const AlbumSchema = new mongoose.Schema({
             imageURL: {
                 type: String
             },
-            credits:{
+            credits: {
                 type: Number,
             }
         }

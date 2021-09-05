@@ -93,6 +93,7 @@ router.post('/billboard-hot-100/result/calculate', admin, async (req, res) => {
                     // console.log(pointsForCurrentSong);
                     songsWithPoints.push({
                         points: pointsForCurrentSong,
+                        songId: song.songId,
                         title: song.title,
                         artist: song.artist,
                         imageURL: song.imageURL,
@@ -270,6 +271,7 @@ router.post('/spotify-top-200-global/result/calculate',
 
                     songsWithPoints.push({
                         points: pointsForCurrentSong,
+                        songId: song.songId,
                         title: song.title,
                         artist: song.artist,
                         leadSingle: song.leadSingle

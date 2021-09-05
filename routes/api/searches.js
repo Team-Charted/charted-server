@@ -26,6 +26,7 @@ router.post('/', auth, async (req, res) => {
 
         searchResults = response.data.response.hits.map(hit => {
             return {
+                songId: hit.result.id,
                 title: hit.result.title,
                 artist: hit.result.primary_artist.name,
                 imageURL: hit.result.song_art_image_url,
