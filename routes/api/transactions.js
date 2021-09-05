@@ -165,12 +165,6 @@ router.post('/add',
         const { amount } = req.body;
 
         try {
-            const user = await User.findById(req.user.id);
-
-            if (!user.fundAccountID) {
-                return res.status(400).json({ errors: [{ msg: 'No bank account linked' }] });
-            }
-
             const body = {
                 amount: amount * 100,
                 currency: "INR"
