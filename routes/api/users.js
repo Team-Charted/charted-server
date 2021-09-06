@@ -93,7 +93,7 @@ router.post('/',
                 }
             };
 
-            jwt.sign(payload, process.env.jwtSecret, { expiresIn: 3600 }, (err, token) => {
+            jwt.sign(payload, process.env.jwtSecret, { expiresIn: '30d' }, (err, token) => {
                 if (err) throw err;
 
                 //send success response with token
