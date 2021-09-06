@@ -30,97 +30,114 @@ router.post('/billboard-hot-100/result/calculate', admin, async (req, res) => {
             if (result)
                 return res.status(400).json({ errors: [{ msg: 'Leaderboard already updated' }] });
 
-            let newResult = new Result({
-                chart: chartObject.id,
-                date: chart.week,
-                leaderboard: [],
-                winnings: chartObject.prizePool
-            });
-
-            //format chart songs into unique strings
+            // format chart songs into unique strings
             let chartSongs = [];
             chartSongs = chart.songs.map(song => {
                 return (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "") // <ARTISTNAME>-<SONGNAME>
             });
 
+            let myLeaderboard = [];
+
             //iterate through all users having an album for Billboard Hot 100
-            await Album.
-                find({ chart: chartObject.id }, (error, data) => {
-                    if (error)
-                        reject(error);
-                    else {
-                        data.forEach(async (album) => {
+            var data = await Album.
+                find({ chart: chartObject.id });
 
-                            let totalPoints = 0.0;
-                            let songsWithPoints = [];
 
-                            //iterate through user's album array
-                            album.songs.map((song, predictionIndex) => {
-                                //format each song into unique string
-                                const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
-                                //find this song's index in Billboard Hot 100 by comparing unique strings
-                                const index = chartSongs.findIndex(song => song === formattedSong);
-
-                                let pointsForCurrentSong = 0.0;
-
-                                if (index !== -1) {
-
-                                    let theSong = chart.songs[index];
-
-                                    //calculate points
-                                    let rank = theSong.rank;
-                                    let predictionPosition = predictionIndex + 1;
-                                    let lastWeekPosition = isNaN(theSong.position.positionLastWeek) ? 0 : parseInt(theSong.position.positionLastWeek);
-                                    let peakPosition = isNaN(theSong.position.peakPosition) ? 0 : parseInt(theSong.position.peakPosition);
-                                    let weeksOnChart = isNaN(theSong.position.weeksOnChart) ? 0 : parseInt(theSong.position.weeksOnChart);
-
-                                    let baseScore = ((10 - (rank - 1) / 10) * (10 - (rank - 1) / 10 - (Math.abs((rank - 1) / 10 - predictionPosition)) / 10));
-
-                                    let stableIndex = weeksOnChart <= 50 ? ((weeksOnChart / 5) + 1) : 11;
-                                    let newSongMultiplier = lastWeekPosition == 0 ? 2 : 1;
-                                    let lastWeekJump = lastWeekPosition == 0 ? 0 : (lastWeekPosition - rank);
-                                    let peakJump = peakPosition == 0 ? 0 : (peakPosition - rank);
-
-                                    let bonuses = ((lastWeekJump + peakJump / 10) - (stableIndex)) * (newSongMultiplier);
-
-                                    //double the points if it was the lead single
-                                    if (song.leadSingle) {
-                                        pointsForCurrentSong *= 2;
-                                    }
-
-                                    pointsForCurrentSong = baseScore + bonuses;
-
-                                    //add these points to the total points
-                                    totalPoints += pointsForCurrentSong;
-                                }
-                                // console.log(pointsForCurrentSong);
-                                songsWithPoints.push({
-                                    points: pointsForCurrentSong,
-                                    songId: song.songId,
-                                    title: song.title,
-                                    artist: song.artist,
-                                    imageURL: song.imageURL,
-                                    leadSingle: song.leadSingle
-                                });
-                            });
-
+            function myFunc() {
+                return new Promise(async (resolve, reject) => {
+                    for (let i = 0; i < data.length; i++) {
+                        let album = data[i];
+                        async function lessgo() {
                             const user = await User.findById(album.user);
+                            return new Promise((resolve, reject) => {
+                                console.log("hello");
 
-                            //update leaderboard field on newResult object
-                            const leaderboardEntry = {
-                                username: user.username,
-                                points: totalPoints,
-                                songsWithPoints: songsWithPoints
-                            };
-                            newResult.leaderboard.push(leaderboardEntry);
+                                let totalPoints = 0.0;
+                                let songsWithPoints = [];
 
-                            //save newResult to database
-                            await newResult.save();
-                            //delete album
-                            await album.remove();
-                        });
+                                // //iterate through user's album array
+                                album.songs.map((song, predictionIndex) => {
+                                    //format each song into unique string
+                                    const formattedSong = (song.artist.split(" ")[0] + '-' + song.title).trim().toLowerCase().replace(/[^a-z]/g, "");
+                                    //find this song's index in Billboard Hot 100 by comparing unique strings
+                                    const index = chartSongs.findIndex(song => song === formattedSong);
+
+                                    let pointsForCurrentSong = 0.0;
+
+                                    if (index !== -1) {
+
+                                        let theSong = chart.songs[index];
+
+                                        //calculate points
+                                        let rank = theSong.rank;
+                                        let predictionPosition = predictionIndex + 1;
+                                        let lastWeekPosition = isNaN(theSong.position.positionLastWeek) ? 0 : parseInt(theSong.position.positionLastWeek);
+                                        let peakPosition = isNaN(theSong.position.peakPosition) ? 0 : parseInt(theSong.position.peakPosition);
+                                        let weeksOnChart = isNaN(theSong.position.weeksOnChart) ? 0 : parseInt(theSong.position.weeksOnChart);
+
+                                        let baseScore = ((10 - (rank - 1) / 10) * (10 - (rank - 1) / 10 - (Math.abs((rank - 1) / 10 - predictionPosition)) / 10));
+
+                                        let stableIndex = weeksOnChart <= 50 ? ((weeksOnChart / 5) + 1) : 11;
+                                        let newSongMultiplier = lastWeekPosition == 0 ? 2 : 1;
+                                        let lastWeekJump = lastWeekPosition == 0 ? 0 : (lastWeekPosition - rank);
+                                        let peakJump = peakPosition == 0 ? 0 : (peakPosition - rank);
+
+                                        let bonuses = ((lastWeekJump + peakJump / 10) - (stableIndex)) * (newSongMultiplier);
+
+                                        //double the points if it was the lead single
+                                        if (song.leadSingle) {
+                                            pointsForCurrentSong *= 2;
+                                        }
+
+                                        pointsForCurrentSong = baseScore + bonuses;
+
+                                        //add these points to the total points
+                                        totalPoints += pointsForCurrentSong;
+                                    }
+                                    // console.log(pointsForCurrentSong);
+                                    songsWithPoints.push({
+                                        points: pointsForCurrentSong,
+                                        songId: song.songId,
+                                        title: song.title,
+                                        artist: song.artist,
+                                        imageURL: song.imageURL,
+                                        leadSingle: song.leadSingle
+                                    });
+                                });
+
+                                //update leaderboard field on newResult object
+                                const leaderboardEntry = {
+                                    username: user.username,
+                                    points: totalPoints,
+                                    songsWithPoints: songsWithPoints
+                                };
+                                myLeaderboard.push(leaderboardEntry);
+
+
+
+                                resolve();
+                            });
+                        }
+                        await lessgo();
+                        //delete album
+                        await album.remove();
                     }
+                    resolve();
                 });
+            }
+
+            await myFunc();
+
+
+            let newResult = new Result({
+                chart: chartObject.id,
+                date: chart.week,
+                leaderboard: myLeaderboard,
+                winnings: chartObject.prizePool
+            });
+
+            //save newResult to database
+            await newResult.save();
 
 
             chartObject.endTime = (Number(chartObject.endTime) + 604800000).toString();
